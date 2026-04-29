@@ -111,6 +111,10 @@ function getInsertMode() {
   return document.querySelector('input[name="insert-mode"]:checked').value;
 }
 
+function getRangeLayout() {
+  return document.querySelector('input[name="range-layout"]:checked').value;
+}
+
 function toggleMode() {
   const mode = getInsertMode();
   document.getElementById("single-mode").style.display = mode === "single" ? "" : "none";
@@ -419,41 +423,70 @@ export async function insertToWord() {
   try {
     await Word.run(async (context) => {
       const body = context.document.body;
+      const isPerLine = !isSingleMode && getRangeLayout() === "per-line";
 
-      // Insert empty paragraph and set its default font to KFGQPC
-      const arabicPara = body.insertParagraph("", Word.InsertLocation.end);
-      arabicPara.font.name = "KFGQPC HAFS Uthmanic Script";
-      arabicPara.font.size = 18;
-      arabicPara.font.color = "#000000";
-      arabicPara.alignment = Word.Alignment.right;
-      arabicPara.lineSpacing = 16;
-      arabicPara.spaceAfter = 0;
-      arabicPara.spaceBefore = 0;
-      arabicPara.rightIndent = 0;
-      arabicPara.leftIndent = 0;
-      arabicPara.firstLineIndent = 0;
+      if (isPerLine) {
+        // Per-line layout: each ayah gets its own paragraph
+        for (let i = 0; i < ayahs.length; i++) {
+          const a = ayahs[i];
+          const para = body.insertParagraph("", Word.InsertLocation.end);
+          para.font.name = "KFGQPC HAFS Uthmanic Script";
+          para.font.size = 18;
+          para.font.color = "#000000";
+          para.alignment = Word.Alignment.right;
+          para.lineSpacing = 16;
+          para.spaceAfter = 0;
+          para.spaceBefore = 0;
+          para.rightIndent = 0;
+          para.leftIndent = 0;
+          para.firstLineIndent = 0;
 
-      // Sync to apply default font before inserting text
-      await context.sync();
+          await context.sync();
 
-      // Insert each ayah text + marker as separate runs with different sizes
-      for (let i = 0; i < ayahs.length; i++) {
-        const a = ayahs[i];
+          const textRange = para.getRange(Word.RangeLocation.end);
+          const textRun = textRange.insertText(a.arabic, Word.InsertLocation.end);
+          textRun.font.name = "KFGQPC HAFS Uthmanic Script";
+          textRun.font.size = 18;
+          textRun.font.color = "#000000";
 
-        // Ayah text - full size
-        const textRange = arabicPara.getRange(Word.RangeLocation.end);
-        const textRun = textRange.insertText(a.arabic, Word.InsertLocation.end);
-        textRun.font.name = "KFGQPC HAFS Uthmanic Script";
-        textRun.font.size = 18;
-        textRun.font.color = "#000000";
-
-        // Verse marker - same size (only if enabled)
-        if (showAyahNumber) {
-          const markerRange = arabicPara.getRange(Word.RangeLocation.end);
+          const markerRange = para.getRange(Word.RangeLocation.end);
           const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
           markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
-          markerRun.font.size = 24;
+          markerRun.font.size = 20;
           markerRun.font.color = "#000000";
+        }
+      } else {
+        // Continuous layout: all ayahs in one paragraph
+        const arabicPara = body.insertParagraph("", Word.InsertLocation.end);
+        arabicPara.font.name = "KFGQPC HAFS Uthmanic Script";
+        arabicPara.font.size = 18;
+        arabicPara.font.color = "#000000";
+        arabicPara.alignment = Word.Alignment.right;
+        arabicPara.lineSpacing = 16;
+        arabicPara.spaceAfter = 0;
+        arabicPara.spaceBefore = 0;
+        arabicPara.rightIndent = 0;
+        arabicPara.leftIndent = 0;
+        arabicPara.firstLineIndent = 0;
+
+        await context.sync();
+
+        for (let i = 0; i < ayahs.length; i++) {
+          const a = ayahs[i];
+
+          const textRange = arabicPara.getRange(Word.RangeLocation.end);
+          const textRun = textRange.insertText(a.arabic, Word.InsertLocation.end);
+          textRun.font.name = "KFGQPC HAFS Uthmanic Script";
+          textRun.font.size = 18;
+          textRun.font.color = "#000000";
+
+          if (showAyahNumber) {
+            const markerRange = arabicPara.getRange(Word.RangeLocation.end);
+            const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
+            markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
+            markerRun.font.size = 20;
+            markerRun.font.color = "#000000";
+          }
         }
       }
 

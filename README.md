@@ -8,6 +8,7 @@ A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic
 - **Arabic Uthmani text** - Sourced from quran.com (text_uthmani) with KFGQPC HAFS Uthmanic Script font
 - **Translations** - English (Sahih International) and Indonesian (Kemenag RI)
 - **Two insert modes** - Single ayah or ayah range
+- **Range layout options** - Continuous (mushaf-style) or one ayah per line
 - **Searchable surah selector** - Filter by surah name, number, or Arabic name
 - **Verse numbering** - Optional Arabic-Indic ayah markers in mushaf style
 - **Offline support** - Service worker caches all assets after first load
@@ -126,8 +127,9 @@ quran_addins_word/
 2. Surah data is lazy-loaded via webpack dynamic imports (`import()`)
 3. Arabic text is cleaned (waqf marks stripped for Word compatibility)
 4. Text is inserted into Word via the Office JS API (`Word.run()`)
-5. Arabic text and verse markers are inserted as separate runs with different font sizes
-6. Translations are inserted as separate paragraphs below
+5. In continuous layout, all ayahs are joined in one paragraph; in per-line layout, each ayah gets its own paragraph
+6. Arabic text and verse markers are inserted as separate runs with different font sizes
+7. Translations are inserted as separate paragraphs below
 
 ### Key technical decisions
 
