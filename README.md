@@ -2,6 +2,8 @@
 
 A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic verses with Arabic text and translations directly into your Word documents.
 
+![Screenshot](assets/screenshot.png)
+
 ## Features
 
 - **Full Quran** - All 114 surahs, 6,236 ayahs
