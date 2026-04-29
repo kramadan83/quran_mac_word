@@ -87,6 +87,65 @@ select.form-control {
     appearance: auto;
 }
 
+/* Surah search dropdown */
+.surah-search-wrap {
+    position: relative;
+}
+
+.surah-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #c8c6c4;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 100;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.surah-dropdown.open {
+    display: block;
+}
+
+.surah-item {
+    padding: 7px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #323130;
+}
+
+.surah-item:hover,
+.surah-item.active {
+    background: #f3f2f1;
+}
+
+.surah-item.selected {
+    background: #e1f0ff;
+    font-weight: 600;
+}
+
+.surah-item__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.surah-item__arabic {
+    font-size: 12px;
+    color: #605e5c;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
 /* Ayah range row */
 .ayah-range-row {
     display: flex;
