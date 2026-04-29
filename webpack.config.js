@@ -5,7 +5,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlProd = "https://kramadan83.github.io/quran_mac_word/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -23,6 +23,7 @@ module.exports = async (env, options) => {
     },
     output: {
       clean: true,
+      publicPath: dev ? "auto" : "/quran_mac_word/",
     },
     resolve: {
       extensions: [".html", ".js"],
@@ -72,6 +73,14 @@ module.exports = async (env, options) => {
           {
             from: "src/fonts/*.ttf",
             to: "fonts/[name][ext]",
+          },
+          {
+            from: "src/service-worker.js",
+            to: "service-worker.js",
+          },
+          {
+            from: "install.sh",
+            to: "install.sh",
           },
           {
             from: "manifest*.xml",

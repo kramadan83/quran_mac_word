@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Quran in Word</title>
+    <title>Quran in Word Mac</title>
 
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
@@ -19,7 +19,7 @@
 
 <body class="ms-Fabric">
     <header class="header">
-        <h1 class="header__title ms-font-l">Quran in Word</h1>
+        <h1 class="header__title ms-font-l">Quran in Word <span class="header__platform">(for Mac)</span></h1>
         <p class="header__subtitle ms-font-s">Insert Quranic verses into your document</p>
     </header>
 
@@ -30,15 +30,45 @@
     <main id="app-body" class="app-body" style="display: none;">
         <!-- Surah Selector -->
         <div class="form-group">
-            <label for="surah-select" class="ms-font-m form-label">Surah</label>
-            <select id="surah-select" class="form-control">
-                <!-- Populated dynamically -->
-            </select>
+            <label class="ms-font-m form-label">Surah</label>
+            <div class="surah-search-wrap">
+                <input type="text" id="surah-search" class="form-control" placeholder="Search for surah name" autocomplete="off" />
+                <input type="hidden" id="surah-value" value="1" />
+                <div id="surah-dropdown" class="surah-dropdown"></div>
+            </div>
         </div>
 
-        <!-- Ayah Range -->
+        <!-- Mode Toggle -->
         <div class="form-group">
-            <label class="ms-font-m form-label">Ayah Range</label>
+            <div class="mode-toggle">
+                <label class="mode-option">
+                    <input type="radio" name="insert-mode" value="single" checked />
+                    <span class="mode-label">Single Ayah</span>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="insert-mode" value="range" />
+                    <span class="mode-label">Ayah Range</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Single Ayah Mode -->
+        <div id="single-mode" class="form-group">
+            <div class="ayah-range-row">
+                <div class="ayah-input-group">
+                    <span class="ayah-input-label">Ayah</span>
+                    <input type="number" id="ayah-single" class="form-control ayah-input" min="1" value="1" />
+                </div>
+                <span id="ayah-total-single" class="ms-font-s ayah-range">/ 7</span>
+            </div>
+            <label class="checkbox-label ms-font-s" style="margin-top: 6px;">
+                <input type="checkbox" id="chk-show-ayah-number" checked />
+                Show ayah number
+            </label>
+        </div>
+
+        <!-- Range Mode -->
+        <div id="range-mode" class="form-group" style="display: none;">
             <div class="ayah-range-row">
                 <div class="ayah-input-group">
                     <span class="ayah-input-label">From</span>
@@ -75,6 +105,9 @@
 
         <!-- Status -->
         <p id="status" class="ms-font-s status"></p>
+
+        <!-- Footer -->
+        <p class="author">Free &amp; open source. Works offline.</p>
     </main>
 </body>
 

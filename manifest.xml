@@ -2,15 +2,15 @@
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="TaskPaneApp">
   <Id>d9793765-235c-450c-b0ea-13bc01b51bcd</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Quran in Word</ProviderName>
+  <ProviderName>Quran in Word Mac</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Quran in Word"/>
+  <DisplayName DefaultValue="Quran in Word Mac"/>
   <Description DefaultValue="Insert Quranic verses with Arabic text and translations (English/Indonesian) into Word documents. Works 100% offline."/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://localhost:3000"/>
+  <SupportUrl DefaultValue="https://localhost:3000/"/>
   <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>https://localhost:3000/</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Document"/>
@@ -72,13 +72,13 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Quran in Word is ready!"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Quran in Word Mac is ready!"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="Quran"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Quran in Word"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Quran in Word Mac"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Your Quran in Word add-in loaded successfully. Go to the HOME tab and click the 'Quran in Word' button to get started."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Quran in Word to insert Quranic verses"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Your Quran in Word Mac add-in loaded successfully. Go to the HOME tab and click the 'Quran in Word Mac' button to get started."/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Quran in Word Mac to insert Quranic verses"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

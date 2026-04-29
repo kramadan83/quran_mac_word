@@ -15,18 +15,41 @@ const dataCache = {
   indonesian: {},
 };
 
-// Pre-import available data (Surah 1)
-import arabic1 from "../data/arabic/1.json";
-import english1 from "../data/english/1.json";
-import indonesian1 from "../data/indonesian/1.json";
+// Dynamically load surah data on demand
+async function loadSurahData(surahNumber) {
+  if (dataCache.arabic[surahNumber]) return; // Already loaded
 
-dataCache.arabic[1] = arabic1;
-dataCache.english[1] = english1;
-dataCache.indonesian[1] = indonesian1;
+  const [arabic, english, indonesian] = await Promise.all([
+    import(/* webpackChunkName: "arabic-[request]" */ `../data/arabic/${surahNumber}.json`),
+    import(/* webpackChunkName: "english-[request]" */ `../data/english/${surahNumber}.json`),
+    import(/* webpackChunkName: "indonesian-[request]" */ `../data/indonesian/${surahNumber}.json`),
+  ]);
+
+  dataCache.arabic[surahNumber] = arabic.default || arabic;
+  dataCache.english[surahNumber] = english.default || english;
+  dataCache.indonesian[surahNumber] = indonesian.default || indonesian;
+}
 
 // --- Helpers ---
 
 const ARABIC_INDIC_ZERO = 0x0660; // ٠
+
+// Waqf marks (U+06D6-U+06DC) are Unicode combining marks.
+// In Word, they show as dotted circles when standalone or are invisible when attached.
+// The font has glyphs but Word's text engine doesn't render them well as combining marks.
+// Solution: strip them from the text entirely for clean rendering in Word.
+// Waqf marks are an editorial feature of printed mushafs, not part of the Quranic text.
+const MUSHAF_MARKS_RE = /[\u06D6-\u06DC\u06DE\u06DF\u06E0\u06E9]/g;
+
+function cleanArabicText(text) {
+  return text.replace(MUSHAF_MARKS_RE, "").replace(/  +/g, " ").trim();
+}
+
+// Strip footnote reference numbers (e.g. "7)", "8)") from translation text
+const FOOTNOTE_RE = /\d+\)/g;
+function cleanTranslation(text) {
+  return text.replace(FOOTNOTE_RE, "").replace(/  +/g, " ").trim();
+}
 
 function toArabicIndic(num) {
   return String(num)
@@ -36,12 +59,20 @@ function toArabicIndic(num) {
 }
 
 function buildVerseMarker(ayahNumber) {
-  // U+06DD = End of Ayah mark (Medina mushaf style)
-  // Digits following it render inside the decorative marker
-  return " \u06DD" + toArabicIndic(ayahNumber) + " ";
+  // Arabic-Indic digits in KFGQPC HAFS font render inside ornamental circles.
+  // U+06DD is NOT used because Word on Mac renders it as a separate blank circle
+  // alongside the digit's ornamental circle, resulting in a duplicate marker.
+  return " " + toArabicIndic(ayahNumber) + " ";
 }
 
 // --- Init ---
+
+// Register service worker for offline support
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
 
 Office.onReady((info) => {
   if (info.host === Office.HostType.Word) {
@@ -52,39 +83,160 @@ Office.onReady((info) => {
 });
 
 function initUI() {
-  populateSurahDropdown();
-  updateAyahRange();
+  initSurahSearch();
+  updateAyahLimits();
 
-  document.getElementById("surah-select").addEventListener("change", () => {
-    updateAyahRange();
-    resetAyahInputs();
+  // Mode toggle
+  document.querySelectorAll('input[name="insert-mode"]').forEach((radio) => {
+    radio.addEventListener("change", toggleMode);
   });
 
-  document.getElementById("ayah-from").addEventListener("input", () => {
-    clampAyahInputs();
+  // Single ayah input - clamp on blur so user can freely type
+  document.getElementById("ayah-single").addEventListener("change", () => {
+    clampSingleAyah();
   });
 
-  document.getElementById("ayah-to").addEventListener("input", () => {
-    clampAyahInputs();
+  // Range inputs - clamp on blur so user can freely type
+  document.getElementById("ayah-from").addEventListener("change", () => {
+    clampRangeInputs();
+  });
+  document.getElementById("ayah-to").addEventListener("change", () => {
+    clampRangeInputs();
   });
 
   document.getElementById("btn-insert").addEventListener("click", insertToWord);
 }
 
-// --- Surah / Ayah helpers ---
+function getInsertMode() {
+  return document.querySelector('input[name="insert-mode"]:checked').value;
+}
 
-function populateSurahDropdown() {
-  const select = document.getElementById("surah-select");
-  surahList.forEach((s) => {
-    const option = document.createElement("option");
-    option.value = s.number;
-    option.textContent = `${s.number}. ${s.name} (${s.arabic})`;
-    select.appendChild(option);
+function toggleMode() {
+  const mode = getInsertMode();
+  document.getElementById("single-mode").style.display = mode === "single" ? "" : "none";
+  document.getElementById("range-mode").style.display = mode === "range" ? "" : "none";
+}
+
+// --- Surah search / Ayah helpers ---
+
+let activeItemIndex = -1;
+
+function initSurahSearch() {
+  const input = document.getElementById("surah-search");
+  const dropdown = document.getElementById("surah-dropdown");
+  const hiddenVal = document.getElementById("surah-value");
+
+  // Default to surah 1 (field left empty to show placeholder)
+  const first = surahList[0];
+  hiddenVal.value = first.number;
+
+  // Build all items once
+  renderDropdown(surahList, dropdown);
+
+  input.addEventListener("focus", () => {
+    input.select();
+    filterAndShow();
+  });
+
+  input.addEventListener("input", () => {
+    filterAndShow();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    const items = dropdown.querySelectorAll(".surah-item");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeItemIndex = Math.min(activeItemIndex + 1, items.length - 1);
+      highlightItem(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeItemIndex = Math.max(activeItemIndex - 1, 0);
+      highlightItem(items);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeItemIndex >= 0 && items[activeItemIndex]) {
+        selectSurah(parseInt(items[activeItemIndex].dataset.number, 10));
+      }
+      closeDropdown();
+    } else if (e.key === "Escape") {
+      closeDropdown();
+      input.blur();
+    }
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".surah-search-wrap")) {
+      closeDropdown();
+    }
+  });
+}
+
+function filterAndShow() {
+  const input = document.getElementById("surah-search");
+  const dropdown = document.getElementById("surah-dropdown");
+  const query = input.value.toLowerCase().trim();
+
+  const filtered = query
+    ? surahList.filter(
+        (s) =>
+          String(s.number).startsWith(query) ||
+          s.name.toLowerCase().includes(query) ||
+          s.arabic.includes(query)
+      )
+    : surahList;
+
+  renderDropdown(filtered, dropdown);
+  activeItemIndex = -1;
+  dropdown.classList.add("open");
+}
+
+function renderDropdown(items, dropdown) {
+  const selected = getSelectedSurah();
+  dropdown.innerHTML = items
+    .map(
+      (s) =>
+        `<div class="surah-item${s.number === selected ? " selected" : ""}" data-number="${s.number}">` +
+        `<span class="surah-item__name">${s.number}. ${s.name}</span>` +
+        `<span class="surah-item__arabic">${s.arabic}</span>` +
+        `</div>`
+    )
+    .join("");
+
+  dropdown.querySelectorAll(".surah-item").forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectSurah(parseInt(el.dataset.number, 10));
+      closeDropdown();
+    });
+  });
+}
+
+function selectSurah(number) {
+  const input = document.getElementById("surah-search");
+  const hiddenVal = document.getElementById("surah-value");
+  const info = getSurahInfo(number);
+  if (!info) return;
+  hiddenVal.value = number;
+  input.value = `${info.number}. ${info.name} (${info.arabic})`;
+  updateAyahLimits();
+  resetAyahInputs();
+}
+
+function closeDropdown() {
+  document.getElementById("surah-dropdown").classList.remove("open");
+  activeItemIndex = -1;
+}
+
+function highlightItem(items) {
+  items.forEach((el, i) => {
+    el.classList.toggle("active", i === activeItemIndex);
+    if (i === activeItemIndex) el.scrollIntoView({ block: "nearest" });
   });
 }
 
 function getSelectedSurah() {
-  return parseInt(document.getElementById("surah-select").value, 10);
+  return parseInt(document.getElementById("surah-value").value, 10);
 }
 
 function getSurahInfo(surahNumber) {
@@ -92,6 +244,11 @@ function getSurahInfo(surahNumber) {
 }
 
 function getSelectedAyahRange() {
+  if (getInsertMode() === "single") {
+    let num = parseInt(document.getElementById("ayah-single").value, 10);
+    if (isNaN(num) || num < 1) num = 1;
+    return { from: num, to: num };
+  }
   let from = parseInt(document.getElementById("ayah-from").value, 10);
   let to = parseInt(document.getElementById("ayah-to").value, 10);
   if (isNaN(from) || from < 1) from = 1;
@@ -104,9 +261,12 @@ function getSelectedAyahRange() {
   return { from, to };
 }
 
-function updateAyahRange() {
+function updateAyahLimits() {
   const info = getSurahInfo(getSelectedSurah());
   if (!info) return;
+  const singleEl = document.getElementById("ayah-single");
+  singleEl.max = info.total_ayah;
+  document.getElementById("ayah-total-single").textContent = `/ ${info.total_ayah}`;
   const fromEl = document.getElementById("ayah-from");
   const toEl = document.getElementById("ayah-to");
   fromEl.max = info.total_ayah;
@@ -117,11 +277,22 @@ function updateAyahRange() {
 function resetAyahInputs() {
   const info = getSurahInfo(getSelectedSurah());
   if (!info) return;
+  document.getElementById("ayah-single").value = 1;
   document.getElementById("ayah-from").value = 1;
   document.getElementById("ayah-to").value = info.total_ayah;
 }
 
-function clampAyahInputs() {
+function clampSingleAyah() {
+  const info = getSurahInfo(getSelectedSurah());
+  if (!info) return;
+  const el = document.getElementById("ayah-single");
+  let val = parseInt(el.value, 10);
+  if (isNaN(val) || val < 1) val = 1;
+  if (val > info.total_ayah) val = info.total_ayah;
+  el.value = val;
+}
+
+function clampRangeInputs() {
   const info = getSurahInfo(getSelectedSurah());
   if (!info) return;
   const fromEl = document.getElementById("ayah-from");
@@ -157,9 +328,9 @@ function getAyahData(surahNumber, ayahNumber) {
 
   return {
     number: ayahNumber,
-    arabic: arabicAyah ? arabicAyah.text : null,
+    arabic: arabicAyah ? cleanArabicText(arabicAyah.text) : null,
     english: englishAyah ? englishAyah.text : null,
-    indonesian: indonesianAyah ? indonesianAyah.text : null,
+    indonesian: indonesianAyah ? cleanTranslation(indonesianAyah.text) : null,
   };
 }
 
@@ -223,6 +394,19 @@ export async function insertToWord() {
   const { from, to } = getSelectedAyahRange();
   const showEnglish = document.getElementById("chk-english").checked;
   const showIndonesian = document.getElementById("chk-indonesian").checked;
+  const isSingleMode = getInsertMode() === "single";
+  const showAyahNumber = isSingleMode
+    ? document.getElementById("chk-show-ayah-number").checked
+    : true; // always show in range mode
+
+  // Load surah data if not yet cached
+  setStatus("Loading data...", false);
+  try {
+    await loadSurahData(surahNum);
+  } catch (err) {
+    setStatus("Failed to load surah data: " + err.message, true);
+    return;
+  }
 
   const ayahs = getAyahRangeData(surahNum, from, to);
   if (ayahs.length === 0) {
@@ -242,8 +426,8 @@ export async function insertToWord() {
       arabicPara.font.size = 18;
       arabicPara.font.color = "#000000";
       arabicPara.alignment = Word.Alignment.right;
-      arabicPara.lineSpacing = 30;
-      arabicPara.spaceAfter = 6;
+      arabicPara.lineSpacing = 16;
+      arabicPara.spaceAfter = 0;
       arabicPara.spaceBefore = 0;
       arabicPara.rightIndent = 0;
       arabicPara.leftIndent = 0;
@@ -263,12 +447,14 @@ export async function insertToWord() {
         textRun.font.size = 18;
         textRun.font.color = "#000000";
 
-        // Verse marker - smaller size
-        const markerRange = arabicPara.getRange(Word.RangeLocation.end);
-        const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
-        markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
-        markerRun.font.size = 11;
-        markerRun.font.color = "#000000";
+        // Verse marker - same size (only if enabled)
+        if (showAyahNumber) {
+          const markerRange = arabicPara.getRange(Word.RangeLocation.end);
+          const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
+          markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
+          markerRun.font.size = 24;
+          markerRun.font.color = "#000000";
+        }
       }
 
       // Sync to commit Arabic text

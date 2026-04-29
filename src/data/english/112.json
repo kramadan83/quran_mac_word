@@ -1,0 +1,24 @@
+{
+  "surah": 112,
+  "name": "Al-Ikhlas",
+  "translator": "Sahih International",
+  "total_ayah": 4,
+  "ayahs": [
+    {
+      "number": 1,
+      "text": "Say, \"He is Allah, [who is] One"
+    },
+    {
+      "number": 2,
+      "text": "Allah, the Eternal Refuge"
+    },
+    {
+      "number": 3,
+      "text": "He neither begets nor is born"
+    },
+    {
+      "number": 4,
+      "text": "Nor is there to Him any equivalent"
+    }
+  ]
+}

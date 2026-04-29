@@ -1,8 +1,9 @@
 @font-face {
     font-family: 'KFGQPC HAFS Uthmanic Script';
-    src: url('/fonts/KFGQPCHAFSUthmanicScript.ttf') format('truetype');
+    src: url('fonts/UthmanicHafs1Ver18.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 html,
@@ -27,6 +28,11 @@ body {
 .header__title {
     margin: 0;
     font-weight: 600;
+}
+
+.header__platform {
+    font-weight: 400;
+    font-size: 13px;
 }
 
 .header__subtitle {
@@ -77,6 +83,65 @@ body {
 
 select.form-control {
     appearance: auto;
+}
+
+/* Surah search dropdown */
+.surah-search-wrap {
+    position: relative;
+}
+
+.surah-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #c8c6c4;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 100;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.surah-dropdown.open {
+    display: block;
+}
+
+.surah-item {
+    padding: 7px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #323130;
+}
+
+.surah-item:hover,
+.surah-item.active {
+    background: #f3f2f1;
+}
+
+.surah-item.selected {
+    background: #e1f0ff;
+    font-weight: 600;
+}
+
+.surah-item__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.surah-item__arabic {
+    font-size: 12px;
+    color: #605e5c;
+    margin-left: 8px;
+    flex-shrink: 0;
 }
 
 /* Ayah range row */
@@ -136,6 +201,45 @@ select.form-control {
     accent-color: #0078d4;
 }
 
+/* Mode toggle */
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid #c8c6c4;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mode-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.mode-option input[type="radio"] {
+    display: none;
+}
+
+.mode-label {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 7px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #605e5c;
+    background: #fff;
+    transition: background 0.15s, color 0.15s;
+}
+
+.mode-option input[type="radio"]:checked + .mode-label {
+    background: #0078d4;
+    color: #fff;
+}
+
 /* Insert button */
 .insert-btn {
     width: 100%;
@@ -171,4 +275,26 @@ select.form-control {
 
 .status--error {
     color: #a4262c;
+}
+
+/* Author */
+.author {
+    text-align: center;
+    font-size: 9px;
+    color: #a19f9d;
+    margin: 12px 0 0;
+    line-height: 1.5;
+}
+
+.author p {
+    margin: 0;
+}
+
+.author a {
+    color: #a19f9d;
+    text-decoration: none;
+}
+
+.author a:hover {
+    text-decoration: underline;
 }
