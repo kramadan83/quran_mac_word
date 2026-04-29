@@ -30,6 +30,13 @@ body {
     font-weight: 600;
 }
 
+.header__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
 .header__subtitle {
     margin: 4px 0 0;
     opacity: 0.85;
@@ -211,4 +218,12 @@ select.form-control {
 
 .status--error {
     color: #a4262c;
+}
+
+/* Author */
+.author {
+    text-align: center;
+    font-size: 9px;
+    color: #a19f9d;
+    margin: 8px 0 0;
 }
