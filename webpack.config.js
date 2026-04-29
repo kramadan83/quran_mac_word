@@ -48,6 +48,13 @@ module.exports = async (env, options) => {
             filename: "assets/[name][ext][query]",
           },
         },
+        {
+          test: /\.(ttf|otf|woff|woff2)$/,
+          type: "asset/resource",
+          generator: {
+            filename: "fonts/[name][ext][query]",
+          },
+        },
       ],
     },
     plugins: [
@@ -61,6 +68,10 @@ module.exports = async (env, options) => {
           {
             from: "assets/*",
             to: "assets/[name][ext][query]",
+          },
+          {
+            from: "src/fonts/*.ttf",
+            to: "fonts/[name][ext]",
           },
           {
             from: "manifest*.xml",

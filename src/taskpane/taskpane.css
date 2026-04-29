@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'KFGQPC HAFS Uthmanic Script';
+    src: url('/fonts/KFGQPCHAFSUthmanicScript.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 html,
 body {
     width: 100%;
@@ -127,57 +134,6 @@ select.form-control {
     width: 16px;
     height: 16px;
     accent-color: #0078d4;
-}
-
-/* Preview box */
-.preview-box {
-    background: #fff;
-    border: 1px solid #e1dfdd;
-    border-radius: 4px;
-    padding: 12px;
-    max-height: 280px;
-    overflow-y: auto;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.preview-box .preview-arabic {
-    direction: rtl;
-    text-align: right;
-    font-family: 'Geeza Pro', 'Traditional Arabic', 'Arabic Typesetting', serif;
-    font-size: 20px;
-    line-height: 2;
-    color: #1a1a1a;
-    margin-bottom: 8px;
-    word-spacing: 4px;
-}
-
-.preview-box .preview-verse-marker {
-    color: #0078d4;
-    font-size: 0.85em;
-    padding: 0 2px;
-}
-
-.preview-box .preview-translation-section {
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid #e1dfdd;
-}
-
-.preview-box .preview-translation-item {
-    direction: ltr;
-    text-align: left;
-    font-size: 12px;
-    color: #555;
-    margin-bottom: 3px;
-    padding-left: 4px;
-}
-
-.preview-box .preview-label {
-    font-weight: 600;
-    color: #0078d4;
-    font-size: 11px;
-    margin-bottom: 4px;
 }
 
 /* Insert button */

@@ -36,7 +36,9 @@ function toArabicIndic(num) {
 }
 
 function buildVerseMarker(ayahNumber) {
-  return " \uFD3F" + toArabicIndic(ayahNumber) + "\uFD3E ";
+  // U+06DD = End of Ayah mark (Medina mushaf style)
+  // Digits following it render inside the decorative marker
+  return " \u06DD" + toArabicIndic(ayahNumber) + " ";
 }
 
 // --- Init ---
@@ -52,26 +54,20 @@ Office.onReady((info) => {
 function initUI() {
   populateSurahDropdown();
   updateAyahRange();
-  updatePreview();
 
   document.getElementById("surah-select").addEventListener("change", () => {
     updateAyahRange();
     resetAyahInputs();
-    updatePreview();
   });
 
   document.getElementById("ayah-from").addEventListener("input", () => {
     clampAyahInputs();
-    updatePreview();
   });
 
   document.getElementById("ayah-to").addEventListener("input", () => {
     clampAyahInputs();
-    updatePreview();
   });
 
-  document.getElementById("chk-english").addEventListener("change", updatePreview);
-  document.getElementById("chk-indonesian").addEventListener("change", updatePreview);
   document.getElementById("btn-insert").addEventListener("click", insertToWord);
 }
 
@@ -176,56 +172,6 @@ function getAyahRangeData(surahNumber, fromAyah, toAyah) {
   return results;
 }
 
-// --- Preview ---
-
-function updatePreview() {
-  const previewEl = document.getElementById("preview");
-  const surahNum = getSelectedSurah();
-  const { from, to } = getSelectedAyahRange();
-  const showEnglish = document.getElementById("chk-english").checked;
-  const showIndonesian = document.getElementById("chk-indonesian").checked;
-
-  const ayahs = getAyahRangeData(surahNum, from, to);
-
-  if (ayahs.length === 0) {
-    const info = getSurahInfo(surahNum);
-    previewEl.innerHTML = `<p style="color:#605e5c; font-style:italic;">Data for ${info ? info.name : "this surah"} is not yet loaded. Only Surah 1 (Al-Fatihah) has dummy data.</p>`;
-    return;
-  }
-
-  // Mushaf-style Arabic block
-  let arabicParts = ayahs.map(
-    (a) => a.arabic + '<span class="preview-verse-marker">' + buildVerseMarker(a.number) + "</span>"
-  );
-  let html = '<div class="preview-arabic">' + arabicParts.join("") + "</div>";
-
-  // English translations
-  if (showEnglish) {
-    html += '<div class="preview-translation-section">';
-    html += '<div class="preview-label">English (Sahih International)</div>';
-    ayahs.forEach((a) => {
-      if (a.english) {
-        html += `<div class="preview-translation-item">${a.number}. ${a.english}</div>`;
-      }
-    });
-    html += "</div>";
-  }
-
-  // Indonesian translations
-  if (showIndonesian) {
-    html += '<div class="preview-translation-section">';
-    html += '<div class="preview-label">Bahasa Indonesia</div>';
-    ayahs.forEach((a) => {
-      if (a.indonesian) {
-        html += `<div class="preview-translation-item">${a.number}. ${a.indonesian}</div>`;
-      }
-    });
-    html += "</div>";
-  }
-
-  previewEl.innerHTML = html;
-}
-
 // --- Word insertion ---
 
 function setStatus(message, isError) {
@@ -240,47 +186,36 @@ function setStatus(message, isError) {
   }
 }
 
-function buildInsertHtml(surahNum, fromAyah, toAyah, showEnglish, showIndonesian) {
+function buildArabicText(surahNum, fromAyah, toAyah) {
   const ayahs = getAyahRangeData(surahNum, fromAyah, toAyah);
   if (ayahs.length === 0) return null;
+  return ayahs.map((a) => a.arabic + buildVerseMarker(a.number)).join("");
+}
 
+function buildTranslationLines(surahNum, fromAyah, toAyah, showEnglish, showIndonesian) {
+  const ayahs = getAyahRangeData(surahNum, fromAyah, toAyah);
   const info = getSurahInfo(surahNum);
   const surahName = info ? info.name : `Surah ${surahNum}`;
+  const lines = [];
 
-  let html = "";
-
-  // Arabic mushaf block - one continuous RTL paragraph with verse markers
-  const arabicContent = ayahs
-    .map((a) => a.arabic + buildVerseMarker(a.number))
-    .join("");
-
-  html += `<p dir="rtl" style="font-family: 'Geeza Pro', 'Traditional Arabic', 'Arabic Typesetting', serif; font-size: 22pt; line-height: 1.8; text-align: right; color: #1a1a1a; margin-bottom: 8pt;">${arabicContent}</p>`;
-
-  // English translations - per ayah
   if (showEnglish) {
-    html += `<p dir="ltr" style="font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 10pt; font-weight: bold; color: #333333; margin-bottom: 2pt;">English Translation (Sahih International)</p>`;
+    lines.push({ text: "English Translation (Sahih International)", isLabel: true });
     ayahs.forEach((a) => {
-      if (a.english) {
-        html += `<p dir="ltr" style="font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 11pt; line-height: 1.5; color: #444444; margin-bottom: 2pt; font-style: italic;">${a.number}. ${a.english}</p>`;
-      }
+      if (a.english) lines.push({ text: `${a.number}. ${a.english}`, isLabel: false });
     });
   }
 
-  // Indonesian translations - per ayah
   if (showIndonesian) {
-    html += `<p dir="ltr" style="font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 10pt; font-weight: bold; color: #333333; margin-bottom: 2pt;">Terjemahan Bahasa Indonesia</p>`;
+    lines.push({ text: "Terjemahan Bahasa Indonesia", isLabel: true });
     ayahs.forEach((a) => {
-      if (a.indonesian) {
-        html += `<p dir="ltr" style="font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 11pt; line-height: 1.5; color: #444444; margin-bottom: 2pt; font-style: italic;">${a.number}. ${a.indonesian}</p>`;
-      }
+      if (a.indonesian) lines.push({ text: `${a.number}. ${a.indonesian}`, isLabel: false });
     });
   }
 
-  // Reference line
   const rangeStr = fromAyah === toAyah ? `${fromAyah}` : `${fromAyah}-${toAyah}`;
-  html += `<p dir="ltr" style="font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 9pt; color: #888888; margin-bottom: 8pt;">(QS. ${surahName}: ${rangeStr})</p>`;
+  lines.push({ text: `(QS. ${surahName}: ${rangeStr})`, isReference: true });
 
-  return html;
+  return lines;
 }
 
 export async function insertToWord() {
@@ -289,18 +224,83 @@ export async function insertToWord() {
   const showEnglish = document.getElementById("chk-english").checked;
   const showIndonesian = document.getElementById("chk-indonesian").checked;
 
-  const html = buildInsertHtml(surahNum, from, to, showEnglish, showIndonesian);
-
-  if (!html) {
+  const ayahs = getAyahRangeData(surahNum, from, to);
+  if (ayahs.length === 0) {
     setStatus("No data available for this ayah range.", true);
     return;
   }
 
+  const translationLines = buildTranslationLines(surahNum, from, to, showEnglish, showIndonesian);
+
   try {
     await Word.run(async (context) => {
       const body = context.document.body;
-      const range = body.getRange(Word.RangeLocation.end);
-      range.insertHtml(html, Word.InsertLocation.after);
+
+      // Insert empty paragraph and set its default font to KFGQPC
+      const arabicPara = body.insertParagraph("", Word.InsertLocation.end);
+      arabicPara.font.name = "KFGQPC HAFS Uthmanic Script";
+      arabicPara.font.size = 18;
+      arabicPara.font.color = "#000000";
+      arabicPara.alignment = Word.Alignment.right;
+      arabicPara.lineSpacing = 30;
+      arabicPara.spaceAfter = 6;
+      arabicPara.spaceBefore = 0;
+      arabicPara.rightIndent = 0;
+      arabicPara.leftIndent = 0;
+      arabicPara.firstLineIndent = 0;
+
+      // Sync to apply default font before inserting text
+      await context.sync();
+
+      // Insert each ayah text + marker as separate runs with different sizes
+      for (let i = 0; i < ayahs.length; i++) {
+        const a = ayahs[i];
+
+        // Ayah text - full size
+        const textRange = arabicPara.getRange(Word.RangeLocation.end);
+        const textRun = textRange.insertText(a.arabic, Word.InsertLocation.end);
+        textRun.font.name = "KFGQPC HAFS Uthmanic Script";
+        textRun.font.size = 18;
+        textRun.font.color = "#000000";
+
+        // Verse marker - smaller size
+        const markerRange = arabicPara.getRange(Word.RangeLocation.end);
+        const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
+        markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
+        markerRun.font.size = 11;
+        markerRun.font.color = "#000000";
+      }
+
+      // Sync to commit Arabic text
+      await context.sync();
+
+      // Insert translation lines
+      for (let i = 0; i < translationLines.length; i++) {
+        const line = translationLines[i];
+        const para = body.insertParagraph(line.text, Word.InsertLocation.end);
+        if (line.isReference) {
+          para.font.name = "Calibri";
+          para.font.size = 9;
+          para.font.color = "#888888";
+          para.alignment = Word.Alignment.left;
+          para.spaceAfter = 12;
+        } else if (line.isLabel) {
+          para.font.name = "Calibri";
+          para.font.size = 10;
+          para.font.color = "#333333";
+          para.alignment = Word.Alignment.left;
+          para.spaceAfter = 2;
+          para.spaceBefore = 6;
+        } else {
+          para.font.name = "Calibri";
+          para.font.size = 11;
+          para.font.italic = true;
+          para.font.color = "#444444";
+          para.alignment = Word.Alignment.left;
+          para.spaceAfter = 2;
+        }
+      }
+
       await context.sync();
     });
 
