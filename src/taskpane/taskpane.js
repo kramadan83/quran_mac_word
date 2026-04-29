@@ -140,19 +140,31 @@ function toggleMode() {
 // --- Language Selector ---
 
 const STORAGE_KEY = "quran-word-active-languages";
+const ENABLED_KEY = "quran-word-enabled-languages";
 const MAX_LANGUAGES = 3;
-const MIN_LANGUAGES = 1;
 
 function loadLanguagePreferences() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Validate: filter to known language IDs
       const valid = parsed.filter((id) => getLanguageById(id));
-      if (valid.length >= MIN_LANGUAGES && valid.length <= MAX_LANGUAGES) {
+      if (valid.length >= 1 && valid.length <= MAX_LANGUAGES) {
         return valid;
       }
+    }
+  } catch (_) {
+    // ignore parse errors
+  }
+  return getDefaultLanguageIds();
+}
+
+function loadEnabledLanguages() {
+  try {
+    const stored = localStorage.getItem(ENABLED_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.filter((id) => getLanguageById(id));
     }
   } catch (_) {
     // ignore parse errors
@@ -164,9 +176,15 @@ function saveLanguagePreferences() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(activeLanguages));
 }
 
+function saveEnabledLanguages() {
+  const enabled = getEnabledLanguages();
+  localStorage.setItem(ENABLED_KEY, JSON.stringify(enabled));
+}
+
 function initLanguageSelector() {
   activeLanguages = loadLanguagePreferences();
-  renderLanguageChips();
+  const savedEnabled = loadEnabledLanguages();
+  renderLanguageChips(savedEnabled);
 
   const addBtn = document.getElementById("btn-add-language");
   const dropdown = document.getElementById("language-dropdown");
@@ -189,29 +207,35 @@ function initLanguageSelector() {
   });
 }
 
-function renderLanguageChips() {
+function renderLanguageChips(enabledIds) {
   const container = document.getElementById("active-languages");
-  const canRemove = activeLanguages.length > MIN_LANGUAGES;
 
   container.innerHTML = activeLanguages
     .map((id) => {
       const lang = getLanguageById(id);
       if (!lang) return "";
+      const checked = enabledIds ? enabledIds.includes(id) : true;
       return (
-        `<span class="language-chip" data-lang="${id}">` +
+        `<label class="language-chip" data-lang="${id}">` +
+        `<input type="checkbox" class="language-chip__check" data-lang="${id}"${checked ? " checked" : ""} />` +
         `<span class="language-chip__name">${lang.name}</span>` +
-        (canRemove
-          ? `<button class="language-chip__remove" data-lang="${id}" title="Remove ${lang.name}">\u00d7</button>`
-          : "") +
-        `</span>`
+        `<button class="language-chip__remove" data-lang="${id}" title="Remove ${lang.name}">\u00d7</button>` +
+        `</label>`
       );
     })
     .join("");
 
   container.querySelectorAll(".language-chip__remove").forEach((btn) => {
     btn.addEventListener("click", (e) => {
+      e.preventDefault();
       e.stopPropagation();
       removeLanguage(btn.dataset.lang);
+    });
+  });
+
+  container.querySelectorAll(".language-chip__check").forEach((chk) => {
+    chk.addEventListener("change", () => {
+      saveEnabledLanguages();
     });
   });
 
@@ -259,18 +283,31 @@ function addLanguage(id) {
   if (activeLanguages.includes(id)) return;
   activeLanguages.push(id);
   saveLanguagePreferences();
-  renderLanguageChips();
+  // New language is checked by default
+  const enabled = getEnabledLanguages();
+  enabled.push(id);
+  renderLanguageChips(enabled);
+  saveEnabledLanguages();
 }
 
 function removeLanguage(id) {
-  if (activeLanguages.length <= MIN_LANGUAGES) return;
   activeLanguages = activeLanguages.filter((l) => l !== id);
+  if (activeLanguages.length === 0) {
+    activeLanguages = getDefaultLanguageIds().slice(0, 1);
+  }
   saveLanguagePreferences();
   renderLanguageChips();
+  saveEnabledLanguages();
+}
+
+function getEnabledLanguages() {
+  const checks = document.querySelectorAll(".language-chip__check:checked");
+  return Array.from(checks).map((c) => c.dataset.lang);
 }
 
 function getActiveLanguages() {
-  return activeLanguages;
+  // Return only the checked (enabled) languages
+  return getEnabledLanguages();
 }
 
 // --- Surah search / Ayah helpers ---
