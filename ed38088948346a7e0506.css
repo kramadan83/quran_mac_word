@@ -298,6 +298,15 @@ select.form-control {
     font-size: 12px;
     font-weight: 600;
     color: #0078d4;
+    cursor: pointer;
+}
+
+.language-chip__check {
+    width: 14px;
+    height: 14px;
+    accent-color: #0078d4;
+    cursor: pointer;
+    margin: 0;
 }
 
 .language-chip__name {
