@@ -31,14 +31,12 @@ body {
 }
 
 .header__platform {
-    margin: 2px 0 0;
-    opacity: 0.9;
-    font-weight: 600;
-    font-style: italic;
+    font-weight: 400;
+    font-size: 13px;
 }
 
 .header__subtitle {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     opacity: 0.85;
 }
 
@@ -284,5 +282,19 @@ select.form-control {
     text-align: center;
     font-size: 9px;
     color: #a19f9d;
-    margin: 8px 0 0;
+    margin: 12px 0 0;
+    line-height: 1.5;
+}
+
+.author p {
+    margin: 0;
+}
+
+.author a {
+    color: #a19f9d;
+    text-decoration: none;
+}
+
+.author a:hover {
+    text-decoration: underline;
 }
