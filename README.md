@@ -1,17 +1,18 @@
 # Quran in Word (for Mac)
 
-A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic verses with Arabic text and translations (English & Indonesian) directly into your Word documents.
+A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic verses with Arabic text and translations directly into your Word documents.
 
 ## Features
 
 - **Full Quran** - All 114 surahs, 6,236 ayahs
 - **Arabic Uthmani text** - Sourced from quran.com (text_uthmani) with KFGQPC HAFS Uthmanic Script font
-- **Translations** - English (Sahih International) and Indonesian (Kemenag RI)
+- **15 translation languages** - English, Indonesian, French, Spanish, German, Turkish, Urdu, Malay, Japanese, Chinese, Korean, Russian, Hindi, Bengali, Thai
+- **Dynamic language selector** - Add/remove translations (1-3 active), preferences saved locally
 - **Two insert modes** - Single ayah or ayah range
 - **Range layout options** - Continuous (mushaf-style) or one ayah per line
 - **Searchable surah selector** - Filter by surah name, number, or Arabic name
 - **Verse numbering** - Optional Arabic-Indic ayah markers in mushaf style
-- **Offline support** - Service worker caches all assets after first load
+- **Offline support** - Service worker caches all assets; API translations cached after first load
 - **No server required** - Hosted on GitHub Pages, no localhost needed
 
 ## Compatibility
@@ -77,11 +78,13 @@ curl -fsSL https://kramadan83.github.io/quran_mac_word/install.sh | bash -s -- -
 quran_addins_word/
 +-- src/
 |   +-- taskpane/
-|   |   +-- taskpane.html      # Add-in UI (taskpane panel)
-|   |   +-- taskpane.js        # Core logic: data loading, Word API, search
-|   |   +-- taskpane.css       # Styles (Fluent UI based)
+|   |   +-- taskpane.html           # Add-in UI (taskpane panel)
+|   |   +-- taskpane.js             # Core logic: data loading, Word API, search
+|   |   +-- taskpane.css            # Styles (Fluent UI based)
+|   |   +-- translationRegistry.js  # Language config for 15 translations
+|   |   +-- translationLoader.js    # Unified fetch: bundled + API
 |   +-- commands/
-|   |   +-- commands.html      # Ribbon command handler
+|   |   +-- commands.html           # Ribbon command handler
 |   |   +-- commands.js
 |   +-- data/
 |   |   +-- surahList.json     # Surah metadata (114 entries)
@@ -90,7 +93,7 @@ quran_addins_word/
 |   |   +-- indonesian/*.json  # Indonesian translation per surah (Kemenag RI)
 |   +-- fonts/
 |   |   +-- UthmanicHafs1Ver18.ttf  # KFGQPC HAFS Uthmanic Script font
-|   +-- service-worker.js      # Offline caching (stale-while-revalidate)
+|   +-- service-worker.js      # Offline caching (app + API translation cache)
 +-- assets/                    # Add-in icons (16, 32, 64, 80, 128px)
 +-- manifest.xml               # Office add-in manifest (dev, localhost)
 +-- install.sh                 # One-line installer/uninstaller
@@ -103,17 +106,17 @@ quran_addins_word/
 ```
 +-------------------+     +--------------------+     +------------------+
 |   Word for Mac    |     |  GitHub Pages      |     |  quran.com API   |
-|                   |     |  (Static hosting)  |     |  (Data source)   |
+|                   |     |  (Static hosting)  |     |  (Data + Trans)  |
 |  +-------------+  |     |                    |     |                  |
 |  | Ribbon Btn  |--+---->| taskpane.html/js   |     |  text_uthmani    |
-|  +-------------+  |     | (webpack bundles)  |     |  (Uthmani text)  |
-|                   |     |                    |     +------------------+
-|  +-------------+  |     | arabic/*.json      |
-|  | Taskpane    |<-+-----| english/*.json     |     +------------------+
-|  | (WebView)   |  |     | indonesian/*.json  |     |  risan/quran-json|
-|  +-------------+  |     |                    |     |  (Translations)  |
-|        |          |     | service-worker.js  |     +------------------+
-|        v          |     | (offline cache)    |
+|  +-------------+  |     | (webpack bundles)  |     |  (Arabic text)   |
+|                   |     |                    |     |                  |
+|  +-------------+  |     | arabic/*.json      |     |  translations/   |
+|  | Taskpane    |<-+-----| english/*.json     |<----+  (13 languages   |
+|  | (WebView)   |  |     | indonesian/*.json  |     |   fetched live)  |
+|  +-------------+  |     |                    |     +------------------+
+|        |          |     | service-worker.js  |
+|        v          |     | (app + API cache)  |
 |  +-------------+  |     |                    |
 |  | Word Doc    |  |     | fonts/             |
 |  | (Insert API)|  |     | UthmanicHafs.ttf   |
@@ -123,25 +126,50 @@ quran_addins_word/
 
 ### Data flow
 
-1. User selects a surah and ayah range in the taskpane
-2. Surah data is lazy-loaded via webpack dynamic imports (`import()`)
-3. Arabic text is cleaned (waqf marks stripped for Word compatibility)
-4. Text is inserted into Word via the Office JS API (`Word.run()`)
-5. In continuous layout, all ayahs are joined in one paragraph; in per-line layout, each ayah gets its own paragraph
-6. Arabic text and verse markers are inserted as separate runs with different font sizes
-7. Translations are inserted as separate paragraphs below
+1. User selects a surah, ayah range, and active translations (1-3) in the taskpane
+2. Arabic data is lazy-loaded via webpack dynamic imports (`import()`)
+3. Bundled translations (EN/ID) loaded via webpack; API translations fetched from quran.com API v4
+4. API responses are cached by the service worker for offline use after first load
+5. Arabic text is cleaned (waqf marks stripped for Word compatibility)
+6. Text is inserted into Word via the Office JS API (`Word.run()`)
+7. In continuous layout, all ayahs are joined in one paragraph; in per-line layout, each ayah gets its own paragraph
+8. Arabic text and verse markers are inserted as separate runs with different font sizes
+9. Translations are inserted as separate paragraphs with per-language font and direction handling
 
 ### Key technical decisions
 
 | Decision | Reason |
 |---|---|
 | **Dynamic imports per surah** | Lazy-load only the surahs needed, not all 4.8MB at once |
+| **Bundled EN/ID + API for rest** | English and Indonesian work offline; 13 other languages fetched from quran.com API v4 on demand |
+| **Cache-first for API translations** | Translation data is immutable; cache-first avoids unnecessary network traffic |
+| **Null font for CJK/Indic** | Letting Word use system font fallback renders better than specifying a font that may not exist |
 | **Waqf marks stripped** | Word on Mac renders combining marks (U+06D6-U+06DC) as dotted circles |
 | **No U+06DD for verse numbers** | Word on Mac renders it as a separate blank circle alongside the digit |
 | **Arabic-Indic digits for markers** | KFGQPC font renders these inside ornamental circles natively |
-| **Stale-while-revalidate SW** | Serves cached assets instantly, updates in background |
+| **Stale-while-revalidate SW** | Serves cached same-origin assets instantly, updates in background |
 | **Font URL relative in CSS** | Required for GitHub Pages subdirectory deployment (`/quran_mac_word/`) |
 | **Footnote refs stripped** | Indonesian source data contains `7)`, `8)` artifacts from print edition |
+
+### Supported translations
+
+| Language | Source | Translator |
+|---|---|---|
+| English | Bundled | Sahih International |
+| Indonesian | Bundled | Kemenag RI |
+| French | API | Muhammad Hamidullah |
+| Spanish | API | Sheikh Isa Garcia |
+| German | API | Frank Bubenheim & Nadeem |
+| Turkish | API | Diyanet Isleri |
+| Urdu | API | Abul A'la Maududi |
+| Malay | API | Abdullah Basmeih |
+| Japanese | API | Ryoichi Mita |
+| Chinese | API | Ma Jian |
+| Korean | API | Korean Translation |
+| Russian | API | Elmir Kuliev |
+| Hindi | API | Maulana Azizul Haque |
+| Bengali | API | Sheikh Mujibur Rahman |
+| Thai | API | King Fahad Complex |
 
 ### Data sources
 
@@ -150,6 +178,7 @@ quran_addins_word/
 | Arabic (Uthmani) | [quran.com API v4](https://api.quran.com/api/v4/quran/verses/uthmani) | Official Uthmani text |
 | English | [risan/quran-json](https://github.com/risan/quran-json) | Sahih International translation |
 | Indonesian | [risan/quran-json](https://github.com/risan/quran-json) | Kemenag RI translation |
+| Other translations | [quran.com API v4](https://api.quran.com/api/v4/resources/translations) | 13 languages fetched at runtime |
 | Font | [quran.com GitHub](https://github.com/nickvdyck/quran.com-frontend) | UthmanicHafs v18 (KFGQPC HAFS) |
 
 ## Development

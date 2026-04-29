@@ -7,27 +7,48 @@
 /* global document, Office, Word */
 
 import surahList from "../data/surahList.json";
+import { getAllLanguages, getLanguageById, getDefaultLanguageIds } from "./translationRegistry";
+import { loadTranslation } from "./translationLoader";
 
 // Data cache
 const dataCache = {
   arabic: {},
-  english: {},
-  indonesian: {},
+  translations: {}, // { [langId]: { [surahNum]: { ayahs: [...] } } }
 };
 
-// Dynamically load surah data on demand
+// Active translation languages (managed by UI)
+let activeLanguages = [];
+
+// Load Arabic data for a surah
+async function loadArabicData(surahNumber) {
+  if (dataCache.arabic[surahNumber]) return;
+  const mod = await import(
+    /* webpackChunkName: "arabic-[request]" */ `../data/arabic/${surahNumber}.json`
+  );
+  dataCache.arabic[surahNumber] = mod.default || mod;
+}
+
+// Load all active translations for a surah
 async function loadSurahData(surahNumber) {
-  if (dataCache.arabic[surahNumber]) return; // Already loaded
-
-  const [arabic, english, indonesian] = await Promise.all([
-    import(/* webpackChunkName: "arabic-[request]" */ `../data/arabic/${surahNumber}.json`),
-    import(/* webpackChunkName: "english-[request]" */ `../data/english/${surahNumber}.json`),
-    import(/* webpackChunkName: "indonesian-[request]" */ `../data/indonesian/${surahNumber}.json`),
-  ]);
-
-  dataCache.arabic[surahNumber] = arabic.default || arabic;
-  dataCache.english[surahNumber] = english.default || english;
-  dataCache.indonesian[surahNumber] = indonesian.default || indonesian;
+  const loads = [loadArabicData(surahNumber)];
+  for (const langId of activeLanguages) {
+    if (!dataCache.translations[langId]) {
+      dataCache.translations[langId] = {};
+    }
+    if (!dataCache.translations[langId][surahNumber]) {
+      loads.push(
+        loadTranslation(langId, surahNumber)
+          .then((data) => {
+            dataCache.translations[langId][surahNumber] = data;
+          })
+          .catch(() => {
+            // Graceful degradation: skip this language if fetch fails
+            dataCache.translations[langId][surahNumber] = { ayahs: [] };
+          })
+      );
+    }
+  }
+  await Promise.all(loads);
 }
 
 // --- Helpers ---
@@ -43,12 +64,6 @@ const MUSHAF_MARKS_RE = /[\u06D6-\u06DC\u06DE\u06DF\u06E0\u06E9]/g;
 
 function cleanArabicText(text) {
   return text.replace(MUSHAF_MARKS_RE, "").replace(/  +/g, " ").trim();
-}
-
-// Strip footnote reference numbers (e.g. "7)", "8)") from translation text
-const FOOTNOTE_RE = /\d+\)/g;
-function cleanTranslation(text) {
-  return text.replace(FOOTNOTE_RE, "").replace(/  +/g, " ").trim();
 }
 
 function toArabicIndic(num) {
@@ -84,6 +99,7 @@ Office.onReady((info) => {
 
 function initUI() {
   initSurahSearch();
+  initLanguageSelector();
   updateAyahLimits();
 
   // Mode toggle
@@ -119,6 +135,142 @@ function toggleMode() {
   const mode = getInsertMode();
   document.getElementById("single-mode").style.display = mode === "single" ? "" : "none";
   document.getElementById("range-mode").style.display = mode === "range" ? "" : "none";
+}
+
+// --- Language Selector ---
+
+const STORAGE_KEY = "quran-word-active-languages";
+const MAX_LANGUAGES = 3;
+const MIN_LANGUAGES = 1;
+
+function loadLanguagePreferences() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validate: filter to known language IDs
+      const valid = parsed.filter((id) => getLanguageById(id));
+      if (valid.length >= MIN_LANGUAGES && valid.length <= MAX_LANGUAGES) {
+        return valid;
+      }
+    }
+  } catch (_) {
+    // ignore parse errors
+  }
+  return getDefaultLanguageIds();
+}
+
+function saveLanguagePreferences() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(activeLanguages));
+}
+
+function initLanguageSelector() {
+  activeLanguages = loadLanguagePreferences();
+  renderLanguageChips();
+
+  const addBtn = document.getElementById("btn-add-language");
+  const dropdown = document.getElementById("language-dropdown");
+
+  addBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (activeLanguages.length >= MAX_LANGUAGES) return;
+    if (dropdown.classList.contains("open")) {
+      closeLangDropdown();
+    } else {
+      renderLangDropdown();
+      dropdown.classList.add("open");
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".language-add-wrap")) {
+      closeLangDropdown();
+    }
+  });
+}
+
+function renderLanguageChips() {
+  const container = document.getElementById("active-languages");
+  const canRemove = activeLanguages.length > MIN_LANGUAGES;
+
+  container.innerHTML = activeLanguages
+    .map((id) => {
+      const lang = getLanguageById(id);
+      if (!lang) return "";
+      return (
+        `<span class="language-chip" data-lang="${id}">` +
+        `<span class="language-chip__name">${lang.name}</span>` +
+        (canRemove
+          ? `<button class="language-chip__remove" data-lang="${id}" title="Remove ${lang.name}">\u00d7</button>`
+          : "") +
+        `</span>`
+      );
+    })
+    .join("");
+
+  container.querySelectorAll(".language-chip__remove").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeLanguage(btn.dataset.lang);
+    });
+  });
+
+  // Update add button state
+  const addBtn = document.getElementById("btn-add-language");
+  if (activeLanguages.length >= MAX_LANGUAGES) {
+    addBtn.classList.add("language-add-btn--disabled");
+    addBtn.title = "Maximum 3 translations";
+  } else {
+    addBtn.classList.remove("language-add-btn--disabled");
+    addBtn.title = "";
+  }
+}
+
+function renderLangDropdown() {
+  const dropdown = document.getElementById("language-dropdown");
+  const all = getAllLanguages();
+  const available = all.filter((l) => !activeLanguages.includes(l.id));
+
+  dropdown.innerHTML = available
+    .map(
+      (l) =>
+        `<div class="language-dropdown-item" data-lang="${l.id}">` +
+        `<span class="language-dropdown-item__name">${l.name}</span>` +
+        `<span class="language-dropdown-item__native">${l.nativeName}</span>` +
+        `</div>`
+    )
+    .join("");
+
+  dropdown.querySelectorAll(".language-dropdown-item").forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      addLanguage(el.dataset.lang);
+      closeLangDropdown();
+    });
+  });
+}
+
+function closeLangDropdown() {
+  document.getElementById("language-dropdown").classList.remove("open");
+}
+
+function addLanguage(id) {
+  if (activeLanguages.length >= MAX_LANGUAGES) return;
+  if (activeLanguages.includes(id)) return;
+  activeLanguages.push(id);
+  saveLanguagePreferences();
+  renderLanguageChips();
+}
+
+function removeLanguage(id) {
+  if (activeLanguages.length <= MIN_LANGUAGES) return;
+  activeLanguages = activeLanguages.filter((l) => l !== id);
+  saveLanguagePreferences();
+  renderLanguageChips();
+}
+
+function getActiveLanguages() {
+  return activeLanguages;
 }
 
 // --- Surah search / Ayah helpers ---
@@ -321,20 +473,27 @@ function clampRangeInputs() {
 
 function getAyahData(surahNumber, ayahNumber) {
   const arabic = dataCache.arabic[surahNumber];
-  const english = dataCache.english[surahNumber];
-  const indonesian = dataCache.indonesian[surahNumber];
-
   if (!arabic) return null;
 
   const arabicAyah = arabic.ayahs.find((a) => a.number === ayahNumber);
-  const englishAyah = english ? english.ayahs.find((a) => a.number === ayahNumber) : null;
-  const indonesianAyah = indonesian ? indonesian.ayahs.find((a) => a.number === ayahNumber) : null;
+  if (!arabicAyah) return null;
+
+  // Build translations map for active languages
+  const translations = {};
+  for (const langId of activeLanguages) {
+    const langData = dataCache.translations[langId] && dataCache.translations[langId][surahNumber];
+    if (langData && langData.ayahs) {
+      const ayah = langData.ayahs.find((a) => a.number === ayahNumber);
+      if (ayah) {
+        translations[langId] = ayah.text;
+      }
+    }
+  }
 
   return {
     number: ayahNumber,
-    arabic: arabicAyah ? cleanArabicText(arabicAyah.text) : null,
-    english: englishAyah ? englishAyah.text : null,
-    indonesian: indonesianAyah ? cleanTranslation(indonesianAyah.text) : null,
+    arabic: cleanArabicText(arabicAyah.text),
+    translations,
   };
 }
 
@@ -361,29 +520,26 @@ function setStatus(message, isError) {
   }
 }
 
-function buildArabicText(surahNum, fromAyah, toAyah) {
-  const ayahs = getAyahRangeData(surahNum, fromAyah, toAyah);
-  if (ayahs.length === 0) return null;
-  return ayahs.map((a) => a.arabic + buildVerseMarker(a.number)).join("");
-}
-
-function buildTranslationLines(surahNum, fromAyah, toAyah, showEnglish, showIndonesian) {
+function buildTranslationLines(surahNum, fromAyah, toAyah, langIds) {
   const ayahs = getAyahRangeData(surahNum, fromAyah, toAyah);
   const info = getSurahInfo(surahNum);
   const surahName = info ? info.name : `Surah ${surahNum}`;
   const lines = [];
 
-  if (showEnglish) {
-    lines.push({ text: "English Translation (Sahih International)", isLabel: true });
-    ayahs.forEach((a) => {
-      if (a.english) lines.push({ text: `${a.number}. ${a.english}`, isLabel: false });
-    });
-  }
+  for (const langId of langIds) {
+    const lang = getLanguageById(langId);
+    if (!lang) continue;
 
-  if (showIndonesian) {
-    lines.push({ text: "Terjemahan Bahasa Indonesia", isLabel: true });
+    // Check if we have any translation data for this language
+    const hasData = ayahs.some((a) => a.translations[langId]);
+    if (!hasData) continue;
+
+    lines.push({ text: lang.sectionLabel, isLabel: true, langId });
     ayahs.forEach((a) => {
-      if (a.indonesian) lines.push({ text: `${a.number}. ${a.indonesian}`, isLabel: false });
+      const text = a.translations[langId];
+      if (text) {
+        lines.push({ text: `${a.number}. ${text}`, isLabel: false, langId });
+      }
     });
   }
 
@@ -396,8 +552,7 @@ function buildTranslationLines(surahNum, fromAyah, toAyah, showEnglish, showIndo
 export async function insertToWord() {
   const surahNum = getSelectedSurah();
   const { from, to } = getSelectedAyahRange();
-  const showEnglish = document.getElementById("chk-english").checked;
-  const showIndonesian = document.getElementById("chk-indonesian").checked;
+  const langs = getActiveLanguages();
   const isSingleMode = getInsertMode() === "single";
   const showAyahNumber = isSingleMode
     ? document.getElementById("chk-show-ayah-number").checked
@@ -418,7 +573,7 @@ export async function insertToWord() {
     return;
   }
 
-  const translationLines = buildTranslationLines(surahNum, from, to, showEnglish, showIndonesian);
+  const translationLines = buildTranslationLines(surahNum, from, to, langs);
 
   try {
     await Word.run(async (context) => {
@@ -493,30 +648,41 @@ export async function insertToWord() {
       // Sync to commit Arabic text
       await context.sync();
 
-      // Insert translation lines
+      // Insert translation lines with per-language font handling
       for (let i = 0; i < translationLines.length; i++) {
         const line = translationLines[i];
         const para = body.insertParagraph(line.text, Word.InsertLocation.end);
+
         if (line.isReference) {
           para.font.name = "Calibri";
           para.font.size = 9;
           para.font.color = "#888888";
           para.alignment = Word.Alignment.left;
           para.spaceAfter = 12;
-        } else if (line.isLabel) {
-          para.font.name = "Calibri";
-          para.font.size = 10;
-          para.font.color = "#333333";
-          para.alignment = Word.Alignment.left;
-          para.spaceAfter = 2;
-          para.spaceBefore = 6;
         } else {
-          para.font.name = "Calibri";
-          para.font.size = 11;
-          para.font.italic = true;
-          para.font.color = "#444444";
-          para.alignment = Word.Alignment.left;
-          para.spaceAfter = 2;
+          // Look up language config for font and direction
+          const lang = line.langId ? getLanguageById(line.langId) : null;
+          const fontName = lang && lang.fontName ? lang.fontName : null;
+          const isRtl = lang && lang.dir === "rtl";
+
+          if (fontName) {
+            para.font.name = fontName;
+          }
+          // If fontName is null, don't set font - let Word use system fallback
+
+          if (line.isLabel) {
+            para.font.size = 10;
+            para.font.color = "#333333";
+            para.alignment = isRtl ? Word.Alignment.right : Word.Alignment.left;
+            para.spaceAfter = 2;
+            para.spaceBefore = 6;
+          } else {
+            para.font.size = 11;
+            para.font.italic = true;
+            para.font.color = "#444444";
+            para.alignment = isRtl ? Word.Alignment.right : Word.Alignment.left;
+            para.spaceAfter = 2;
+          }
         }
       }
 

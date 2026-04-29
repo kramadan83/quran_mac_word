@@ -93,18 +93,13 @@
             </div>
         </div>
 
-        <!-- Translation Checkboxes -->
+        <!-- Translation Languages -->
         <div class="form-group">
             <label class="ms-font-m form-label">Translations</label>
-            <div class="checkbox-group">
-                <label class="checkbox-label ms-font-s">
-                    <input type="checkbox" id="chk-english" />
-                    English (Sahih International)
-                </label>
-                <label class="checkbox-label ms-font-s">
-                    <input type="checkbox" id="chk-indonesian" checked />
-                    Bahasa Indonesia
-                </label>
+            <div id="active-languages" class="language-chips"></div>
+            <div class="language-add-wrap">
+                <button type="button" id="btn-add-language" class="language-add-btn">+ Add Translation</button>
+                <div id="language-dropdown" class="language-dropdown"></div>
             </div>
         </div>
 
