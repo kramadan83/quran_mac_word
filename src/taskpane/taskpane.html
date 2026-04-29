@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quran in Word</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+    <!-- Fluent UI -->
+    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+
+    <!-- Add-in styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="ms-Fabric">
+    <header class="header">
+        <h1 class="header__title ms-font-l">Quran in Word</h1>
+        <p class="header__subtitle ms-font-s">Insert Quranic verses into your document</p>
+    </header>
+
+    <section id="sideload-msg" class="sideload-msg">
+        <p class="ms-font-m">Please <a target="_blank" href="https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing">sideload</a> your add-in to see the app.</p>
+    </section>
+
+    <main id="app-body" class="app-body" style="display: none;">
+        <!-- Surah Selector -->
+        <div class="form-group">
+            <label for="surah-select" class="ms-font-m form-label">Surah</label>
+            <select id="surah-select" class="form-control">
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+
+        <!-- Ayah Range -->
+        <div class="form-group">
+            <label class="ms-font-m form-label">Ayah Range</label>
+            <div class="ayah-range-row">
+                <div class="ayah-input-group">
+                    <span class="ayah-input-label">From</span>
+                    <input type="number" id="ayah-from" class="form-control ayah-input" min="1" value="1" />
+                </div>
+                <span class="ayah-separator">&ndash;</span>
+                <div class="ayah-input-group">
+                    <span class="ayah-input-label">To</span>
+                    <input type="number" id="ayah-to" class="form-control ayah-input" min="1" value="7" />
+                </div>
+                <span id="ayah-range" class="ms-font-s ayah-range">/ 7</span>
+            </div>
+        </div>
+
+        <!-- Translation Checkboxes -->
+        <div class="form-group">
+            <label class="ms-font-m form-label">Translations</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label ms-font-s">
+                    <input type="checkbox" id="chk-english" checked />
+                    English (Sahih International)
+                </label>
+                <label class="checkbox-label ms-font-s">
+                    <input type="checkbox" id="chk-indonesian" />
+                    Bahasa Indonesia
+                </label>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="form-group">
+            <label class="ms-font-m form-label">Preview</label>
+            <div id="preview" class="preview-box"></div>
+        </div>
+
+        <!-- Insert Button -->
+        <button id="btn-insert" class="ms-Button ms-Button--primary insert-btn">
+            <span class="ms-Button-label">Insert to Word</span>
+        </button>
+
+        <!-- Status -->
+        <p id="status" class="ms-font-s status"></p>
+    </main>
+</body>
+
+</html>

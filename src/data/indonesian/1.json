@@ -1,0 +1,15 @@
+{
+  "surah": 1,
+  "name": "Al-Fatihah",
+  "translator": "Kementerian Agama RI",
+  "total_ayah": 7,
+  "ayahs": [
+    { "number": 1, "text": "Dengan nama Allah Yang Maha Pengasih, Maha Penyayang." },
+    { "number": 2, "text": "Segala puji bagi Allah, Tuhan seluruh alam." },
+    { "number": 3, "text": "Yang Maha Pengasih, Maha Penyayang." },
+    { "number": 4, "text": "Pemilik hari pembalasan." },
+    { "number": 5, "text": "Hanya kepada Engkaulah kami menyembah dan hanya kepada Engkaulah kami memohon pertolongan." },
+    { "number": 6, "text": "Tunjukilah kami jalan yang lurus." },
+    { "number": 7, "text": "(yaitu) jalan orang-orang yang telah Engkau beri nikmat kepadanya; bukan (jalan) mereka yang dimurkai, dan bukan (pula jalan) mereka yang sesat." }
+  ]
+}
