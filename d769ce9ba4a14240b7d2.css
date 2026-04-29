@@ -240,6 +240,46 @@ select.form-control {
     color: #fff;
 }
 
+/* Layout toggle (range mode) */
+.layout-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid #c8c6c4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.layout-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.layout-option input[type="radio"] {
+    display: none;
+}
+
+.layout-label {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #605e5c;
+    background: #fff;
+    transition: background 0.15s, color 0.15s;
+}
+
+.layout-option input[type="radio"]:checked + .layout-label {
+    background: #0078d4;
+    color: #fff;
+}
+
 /* Insert button */
 .insert-btn {
     width: 100%;
