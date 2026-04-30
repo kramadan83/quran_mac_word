@@ -8,7 +8,7 @@
   <Description DefaultValue="Insert Quranic verses with Arabic text and translations (English/Indonesian) into Word documents. Works 100% offline."/>
   <IconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/"/>
+  <SupportUrl DefaultValue="https://github.com/kramadan83/quran_mac_word"/>
   <AppDomains>
     <AppDomain>https://kramadan83.github.io/quran_mac_word/</AppDomain>
   </AppDomains>
