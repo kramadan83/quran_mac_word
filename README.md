@@ -91,11 +91,13 @@ quran_addins_word/
 |   +-- data/
 |   |   +-- surahList.json     # Surah metadata (114 entries)
 |   |   +-- arabic/*.json      # Arabic text per surah (from quran.com API v4)
-|   |   +-- english/*.json     # English translation per surah (Sahih International)
-|   |   +-- indonesian/*.json  # Indonesian translation per surah (Kemenag RI)
+|   |   +-- english/*.json     # English translation per surah (from quran.com, Sahih International)
+|   |   +-- indonesian/*.json  # Indonesian translation per surah (from quran.com, Kemenag RI)
 |   +-- fonts/
 |   |   +-- UthmanicHafs1Ver18.ttf  # KFGQPC HAFS Uthmanic Script font
 |   +-- service-worker.js      # Offline caching (app + API translation cache)
++-- scripts/
+|   +-- fetch-translations.mjs # Fetch/update bundled translations from quran.com API
 +-- assets/                    # Add-in icons (16, 32, 64, 80, 128px)
 +-- manifest.xml               # Office add-in manifest (dev, localhost)
 +-- install.sh                 # One-line installer/uninstaller
@@ -143,7 +145,7 @@ quran_addins_word/
 | Decision | Reason |
 |---|---|
 | **Dynamic imports per surah** | Lazy-load only the surahs needed, not all 4.8MB at once |
-| **Bundled EN/ID + API for rest** | English and Indonesian work offline; 13 other languages fetched from quran.com API v4 on demand |
+| **Bundled EN/ID + API for rest** | English and Indonesian (from quran.com API) bundled for offline use; 13 other languages fetched on demand |
 | **Cache-first for API translations** | Translation data is immutable; cache-first avoids unnecessary network traffic |
 | **Null font for CJK/Indic** | Letting Word use system font fallback renders better than specifying a font that may not exist |
 | **Waqf marks stripped** | Word on Mac renders combining marks (U+06D6-U+06DC) as dotted circles |
@@ -178,8 +180,8 @@ quran_addins_word/
 | Data | Source | Notes |
 |---|---|---|
 | Arabic (Uthmani) | [quran.com API v4](https://api.quran.com/api/v4/quran/verses/uthmani) | Official Uthmani text |
-| English | [risan/quran-json](https://github.com/risan/quran-json) | Sahih International translation |
-| Indonesian | [risan/quran-json](https://github.com/risan/quran-json) | Kemenag RI translation |
+| English | [quran.com API v4](https://api.quran.com/api/v4/quran/translations/20) | Sahih International (edition 20) |
+| Indonesian | [quran.com API v4](https://api.quran.com/api/v4/quran/translations/33) | Kementerian Agama RI (edition 33) |
 | Other translations | [quran.com API v4](https://api.quran.com/api/v4/resources/translations) | 13 languages fetched at runtime |
 | Font | [quran.com GitHub](https://github.com/nickvdyck/quran.com-frontend) | UthmanicHafs v18 (KFGQPC HAFS) |
 
