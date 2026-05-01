@@ -571,11 +571,10 @@ function buildTranslationLines(surahNum, fromAyah, toAyah, langIds) {
     const hasData = ayahs.some((a) => a.translations[langId]);
     if (!hasData) continue;
 
-    lines.push({ text: lang.sectionLabel, isLabel: true, langId });
     ayahs.forEach((a) => {
       const text = a.translations[langId];
       if (text) {
-        lines.push({ text: `${a.number}. ${text}`, isLabel: false, langId });
+        lines.push({ text: `${a.number}. ${text}`, langId });
       }
     });
   }
@@ -593,7 +592,7 @@ export async function insertToWord() {
   const isSingleMode = getInsertMode() === "single";
   const showAyahNumber = isSingleMode
     ? document.getElementById("chk-show-ayah-number").checked
-    : true; // always show in range mode
+    : document.getElementById("chk-show-ayah-number-range").checked;
 
   // Load surah data if not yet cached
   setStatus("Loading data...", false);
@@ -641,11 +640,13 @@ export async function insertToWord() {
           textRun.font.size = 18;
           textRun.font.color = "#000000";
 
-          const markerRange = para.getRange(Word.RangeLocation.end);
-          const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
-          markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
-          markerRun.font.size = 20;
-          markerRun.font.color = "#000000";
+          if (showAyahNumber) {
+            const markerRange = para.getRange(Word.RangeLocation.end);
+            const markerRun = markerRange.insertText(buildVerseMarker(a.number), Word.InsertLocation.end);
+            markerRun.font.name = "KFGQPC HAFS Uthmanic Script";
+            markerRun.font.size = 20;
+            markerRun.font.color = "#000000";
+          }
         }
       } else {
         // Continuous layout: all ayahs in one paragraph
@@ -665,6 +666,16 @@ export async function insertToWord() {
 
         for (let i = 0; i < ayahs.length; i++) {
           const a = ayahs[i];
+
+          // When ayah numbers are hidden, add visual spacing between ayahs
+          // so the user can distinguish where one ayah ends and the next begins
+          if (!showAyahNumber && i > 0) {
+            const spaceRange = arabicPara.getRange(Word.RangeLocation.end);
+            const spaceRun = spaceRange.insertText("    ", Word.InsertLocation.end);
+            spaceRun.font.name = "KFGQPC HAFS Uthmanic Script";
+            spaceRun.font.size = 18;
+            spaceRun.font.color = "#000000";
+          }
 
           const textRange = arabicPara.getRange(Word.RangeLocation.end);
           const textRun = textRange.insertText(a.arabic, Word.InsertLocation.end);
@@ -707,19 +718,11 @@ export async function insertToWord() {
           }
           // If fontName is null, don't set font - let Word use system fallback
 
-          if (line.isLabel) {
-            para.font.size = 10;
-            para.font.color = "#333333";
-            para.alignment = isRtl ? Word.Alignment.right : Word.Alignment.left;
-            para.spaceAfter = 2;
-            para.spaceBefore = 6;
-          } else {
-            para.font.size = 11;
-            para.font.italic = true;
-            para.font.color = "#444444";
-            para.alignment = isRtl ? Word.Alignment.right : Word.Alignment.left;
-            para.spaceAfter = 2;
-          }
+          para.font.size = 11;
+          para.font.italic = true;
+          para.font.color = "#444444";
+          para.alignment = isRtl ? Word.Alignment.right : Word.Alignment.left;
+          para.spaceAfter = 2;
         }
       }
 
