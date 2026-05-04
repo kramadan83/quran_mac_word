@@ -12,6 +12,7 @@ A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic
 - **Dynamic language selector** - Add/remove translations (1-3 active), preferences saved locally
 - **Two insert modes** - Single ayah or ayah range
 - **Range layout options** - Continuous (mushaf-style) or one ayah per line
+- **Show/hide ayah numbers** - Toggle ayah number visibility in range mode
 - **Searchable surah selector** - Filter by surah name, number, or Arabic name
 - **Verse numbering** - Optional Arabic-Indic ayah markers in mushaf style
 - **Offline support** - Service worker caches all assets; API translations cached after first load
