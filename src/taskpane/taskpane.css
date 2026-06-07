@@ -472,3 +472,11 @@ select.form-control {
 .author a:hover {
     text-decoration: underline;
 }
+
+/* Page info (mushaf page mode) */
+.page-info {
+    margin: 6px 0 0;
+    color: #605e5c;
+    font-size: 12px;
+    min-height: 18px;
+}

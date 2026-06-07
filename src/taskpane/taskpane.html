@@ -28,16 +28,6 @@
     </section>
 
     <main id="app-body" class="app-body" style="display: none;">
-        <!-- Surah Selector -->
-        <div class="form-group">
-            <label class="ms-font-m form-label">Surah</label>
-            <div class="surah-search-wrap">
-                <input type="text" id="surah-search" class="form-control" placeholder="Search for surah name" autocomplete="off" />
-                <input type="hidden" id="surah-value" value="1" />
-                <div id="surah-dropdown" class="surah-dropdown"></div>
-            </div>
-        </div>
-
         <!-- Mode Toggle -->
         <div class="form-group">
             <div class="mode-toggle">
@@ -49,6 +39,28 @@
                     <input type="radio" name="insert-mode" value="range" />
                     <span class="mode-label">Ayah Range</span>
                 </label>
+                <label class="mode-option">
+                    <input type="radio" name="insert-mode" value="page" />
+                    <span class="mode-label">Mushaf Page</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Arabic Only Checkbox -->
+        <div class="form-group">
+            <label class="checkbox-label ms-font-s">
+                <input type="checkbox" id="chk-arabic-only" />
+                Arabic only (no translations)
+            </label>
+        </div>
+
+        <!-- Surah Selector -->
+        <div id="surah-selector-wrap" class="form-group">
+            <label class="ms-font-m form-label">Surah</label>
+            <div class="surah-search-wrap">
+                <input type="text" id="surah-search" class="form-control" placeholder="Search for surah name" autocomplete="off" />
+                <input type="hidden" id="surah-value" value="1" />
+                <div id="surah-dropdown" class="surah-dropdown"></div>
             </div>
         </div>
 
@@ -95,6 +107,18 @@
                 <input type="checkbox" id="chk-show-ayah-number-range" checked />
                 Show ayah number
             </label>
+        </div>
+
+        <!-- Page Mode -->
+        <div id="page-mode" class="form-group" style="display: none;">
+            <div class="ayah-range-row">
+                <div class="ayah-input-group">
+                    <span class="ayah-input-label">Page</span>
+                    <input type="number" id="mushaf-page" class="form-control ayah-input" min="1" max="604" value="1" />
+                </div>
+                <span id="page-total" class="ms-font-s ayah-range">/ 604</span>
+            </div>
+            <p id="page-info" class="ms-font-s page-info"></p>
         </div>
 
         <!-- Translation Languages -->

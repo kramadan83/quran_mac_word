@@ -10,7 +10,8 @@ A free, open-source Microsoft Word add-in for macOS that lets you insert Quranic
 - **Arabic Uthmani text** - Sourced from quran.com (text_uthmani) with KFGQPC HAFS Uthmanic Script font
 - **15 translation languages** - English, Indonesian, French, Spanish, German, Turkish, Urdu, Malay, Japanese, Chinese, Korean, Russian, Hindi, Bengali, Thai
 - **Dynamic language selector** - Add/remove translations (1-3 active), preferences saved locally
-- **Two insert modes** - Single ayah or ayah range
+- **Three insert modes** - Single ayah, ayah range, or Mushaf Page (604 pages)
+- **Arabic-only mode** - Insert Arabic text without any translations
 - **Range layout options** - Continuous (mushaf-style) or one ayah per line
 - **Show/hide ayah numbers** - Toggle ayah number visibility in range mode
 - **Searchable surah selector** - Filter by surah name, number, or Arabic name
@@ -52,6 +53,19 @@ Then:
 4. Select **"Quran in Word Mac"** and click **Add**
 5. The button appears in the **Home** tab ribbon
 
+### Update to latest version
+
+If you already have the add-in installed and want to update to the latest version:
+
+```bash
+curl -fsSL https://kramadan83.github.io/quran_mac_word/install.sh | bash -s -- --clear-cache
+```
+
+Then:
+1. Quit Word completely (Cmd+Q)
+2. Reopen Word
+3. The add-in will automatically load with the latest features
+
 ### Manual install
 
 **Step 1** - Install the Arabic font:
@@ -75,6 +89,16 @@ curl -o ~/Library/Containers/com.microsoft.Word/Data/Documents/wef/manifest.xml 
 curl -fsSL https://kramadan83.github.io/quran_mac_word/install.sh | bash -s -- --uninstall
 ```
 
+### Clear Cache
+
+If the add-in doesn't update after installation, clear the Office cache:
+
+```bash
+curl -fsSL https://kramadan83.github.io/quran_mac_word/install.sh | bash -s -- --clear-cache
+```
+
+Then quit Word and reopen it.
+
 ## Architecture
 
 ```
@@ -91,6 +115,7 @@ quran_addins_word/
 |   |   +-- commands.js
 |   +-- data/
 |   |   +-- surahList.json     # Surah metadata (114 entries)
+|   |   +-- pageToAyahs.json   # Madinah Mushaf page-to-ayah mapping (604 pages)
 |   |   +-- arabic/*.json      # Arabic text per surah (from quran.com API v4)
 |   |   +-- english/*.json     # English translation per surah (from quran.com, Sahih International)
 |   |   +-- indonesian/*.json  # Indonesian translation per surah (from quran.com, Kemenag RI)

@@ -89,7 +89,15 @@ module.exports = async (env, options) => {
               if (dev) {
                 return content;
               } else {
-                return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+                // Add cache-busting version parameter to all our URLs
+                const contentStr = content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+                const versionMatch = contentStr.match(/<Version>([^<]+)<\/Version>/);
+                const version = versionMatch ? versionMatch[1].replace(/\./g, "") : "1000";
+                const cacheBust = `?v=${version}`;
+                
+                // Append cache-bust query param to all URLs pointing to our GitHub Pages domain
+                const regex = new RegExp(`(${urlProd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})([^"\\s?]*)(\\?[^"\\s]*)?`, "g");
+                return contentStr.replace(regex, `$1$2${cacheBust}`);
               }
             },
           },
