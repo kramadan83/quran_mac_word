@@ -1,8 +1,9 @@
 #!/bin/bash
 # Quran in Word (for Mac) - Install / Uninstall script
 # Usage:
-#   Install:    bash install.sh
-#   Uninstall:  bash install.sh --uninstall
+#   Install:       bash install.sh
+#   Uninstall:     bash install.sh --uninstall
+#   Clear cache:   bash install.sh --clear-cache
 
 set -e
 
@@ -25,6 +26,27 @@ print_header() {
   echo -e "  Insert Quranic verses into your document"
   echo ""
 }
+
+# --- CLEAR CACHE ONLY ---
+if [ "$1" = "--clear-cache" ] || [ "$1" = "clear-cache" ]; then
+  print_header
+  echo -e "${BOLD}Clearing Office add-in cache...${NC}"
+  echo ""
+
+  CACHE_DIR="$HOME/Library/Containers/com.microsoft.Word/Data/Library/Application Support/Microsoft/Office/16.0/Wef"
+  if [ -d "$CACHE_DIR" ]; then
+    rm -rf "$CACHE_DIR" 2>/dev/null
+    echo -e "  ${GREEN}Cleared Office add-in cache${NC}"
+  else
+    echo "  Cache directory not found (nothing to clear)"
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}  Cache cleared.${NC}"
+  echo "  Please restart Word for changes to take effect."
+  echo ""
+  exit 0
+fi
 
 # --- UNINSTALL ---
 if [ "$1" = "--uninstall" ] || [ "$1" = "uninstall" ]; then
@@ -49,8 +71,13 @@ if [ "$1" = "--uninstall" ] || [ "$1" = "uninstall" ]; then
   fi
 
   # Clear Office cache
-  rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/Microsoft/Office/16.0/Wef/" 2>/dev/null
-  echo -e "  ${GREEN}Cleared Office add-in cache${NC}"
+  CACHE_DIR="$HOME/Library/Containers/com.microsoft.Word/Data/Library/Application Support/Microsoft/Office/16.0/Wef"
+  if [ -d "$CACHE_DIR" ]; then
+    rm -rf "$CACHE_DIR" 2>/dev/null
+    echo -e "  ${GREEN}Cleared Office add-in cache${NC}"
+  else
+    echo "  Cache directory not found (already clean)"
+  fi
 
   echo ""
   echo -e "${GREEN}${BOLD}  Uninstall complete.${NC}"
@@ -98,7 +125,10 @@ else
 fi
 
 # Step 3: Clear old cache
-rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/Microsoft/Office/16.0/Wef/" 2>/dev/null
+CACHE_DIR="$HOME/Library/Containers/com.microsoft.Word/Data/Library/Application Support/Microsoft/Office/16.0/Wef"
+if [ -d "$CACHE_DIR" ]; then
+  rm -rf "$CACHE_DIR" 2>/dev/null
+fi
 echo -e "  Cleared Office cache... ${GREEN}done${NC}"
 
 # Done
@@ -113,4 +143,7 @@ echo "    4. Select \"Quran in Word Mac\" and click Add"
 echo ""
 echo "  To uninstall later:"
 echo "    bash install.sh --uninstall"
+echo ""
+echo "  To clear Office cache (if add-in doesn't update):"
+echo "    bash install.sh --clear-cache"
 echo ""
