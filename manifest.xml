@@ -6,17 +6,17 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Quran in Word Mac"/>
   <Description DefaultValue="Insert Quranic verses with Arabic text and translations (English/Indonesian) into Word documents. Works 100% offline."/>
-  <IconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-64.png"/>
+  <IconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-32.png?v=1000"/>
+  <HighResolutionIconUrl DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-64.png?v=1000"/>
   <SupportUrl DefaultValue="https://github.com/kramadan83/quran_mac_word"/>
   <AppDomains>
-    <AppDomain>https://kramadan83.github.io/quran_mac_word/</AppDomain>
+    <AppDomain>https://kramadan83.github.io/quran_mac_word/</AppDomain>?v=1000
   </AppDomains>
   <Hosts>
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://kramadan83.github.io/quran_mac_word/taskpane.html"/>
+    <SourceLocation DefaultValue="https://kramadan83.github.io/quran_mac_word/taskpane.html?v=1000"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -62,14 +62,14 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-16.png?v=1000"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-32.png?v=1000"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://kramadan83.github.io/quran_mac_word/assets/icon-80.png?v=1000"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://kramadan83.github.io/quran_mac_word/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://kramadan83.github.io/quran_mac_word/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://kramadan83.github.io/quran_mac_word/commands.html?v=1000"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://kramadan83.github.io/quran_mac_word/taskpane.html?v=1000"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Quran in Word Mac is ready!"/>
